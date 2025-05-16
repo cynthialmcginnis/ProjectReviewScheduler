@@ -19,8 +19,16 @@ This module implements the core functionality for the Project Review Scheduler s
 including due date calculation, reviewer assignment, notification, and reporting.
 """
 
+
 import sys
+import os
+
 from pathlib import Path
+
+# Add your project directory to sys.path
+project_dir = Path.home() / "Documents" / "ProjectReviewScheduler"
+sys.path.append(str(project_dir))
+
 import os
 import csv
 import smtplib
@@ -32,17 +40,10 @@ from io import StringIO
 
 from faker import Faker
 import random
-from dateutil.relativedelta import relativedelta
-
-# Add your project directory to sys.path
-project_dir = Path.home() / "Documents" / "ProjectReviewScheduler"
-sys.path.append(str(project_dir))
-
-# Initialize Faker
 fake = Faker()
 
-# Import utility functions
 from utils import safe_parse_date
+from dateutil.relativedelta import relativedelta
 
    
 
@@ -1260,7 +1261,7 @@ if __name__ == '__main__':
 
 
 
-# In[100]:
+# In[98]:
 
 
 from dateutil.relativedelta import relativedelta
@@ -1306,27 +1307,23 @@ def assign_reviewers(projects_df, users_df):
         })
     return pd.DataFrame(assignments)
 
-import streamlit as st
-import pandas as pd
-from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
-
+# --------------- Streamlit App UI ---------------
 # Title of the app
 st.title('Project Review Scheduler')
 
 # Instructions
 st.write('This app helps to automate project review scheduling and reviewer assignments.')
 
-# File uploader for Users CSV
+# File uploader for CSV files
 users_file = st.file_uploader("Upload Users CSV", type=["csv"])
-
-# File uploader for Projects CSV
 projects_file = st.file_uploader("Upload Projects CSV", type=["csv"])
+reviews_file = st.file_uploader("Upload Reviews CSV", type=["csv"])
 
-if users_file and projects_file:
+if users_file and projects_file and reviews_file:
     # Load CSV files
     users_df = pd.read_csv(users_file)
     projects_df = pd.read_csv(projects_file)
+    reviews_df = pd.read_csv(reviews_file)
 
     st.write("Data loaded successfully!")
 
@@ -1337,33 +1334,8 @@ if users_file and projects_file:
     st.write("Projects Data:")
     st.write(projects_df.head())
 
-    # Function to calculate review due dates
-    def calculate_due_dates(projects_df):
-        projects_df['Start_Date'] = pd.to_datetime(projects_df['Start_Date'], errors='coerce')
-
-        def calculate_for_project(row):
-            last_review = row['Start_Date']
-            frequency_years = row['Review_Frequency_Years']
-            frequency_months = int(frequency_years * 12)
-            next_review = last_review + relativedelta(months=frequency_months)
-            return pd.Series({
-                'Next_Review_Date': next_review,
-            })
-
-        projects_df[['Next_Review_Date']] = projects_df.apply(calculate_for_project, axis=1)
-        return projects_df
-
-    # Function to assign reviewers to projects
-    def assign_reviewers(projects_df, users_df):
-        assignments = []
-        for i, project in projects_df.iterrows():
-            available_reviewer = users_df.sample(1).iloc[0]  # Randomly choose a reviewer
-            assignments.append({
-                "Project_ID": project["Project_ID"],
-                "Reviewer_ID": available_reviewer["User_ID"],
-                "Reviewer_Name": available_reviewer["Name"]
-            })
-        return pd.DataFrame(assignments)
+    st.write("Reviews Data:")
+    st.write(reviews_df.head())
 
     # Trigger functions via buttons
     if st.button('Calculate Review Due Dates'):
@@ -1376,21 +1348,8 @@ if users_file and projects_file:
         st.write('Reviewers assigned:')
         st.write(assignments_df)
 
-    # Option to download the generated reviews.csv
-    generated_reviews_df = assign_reviewers(projects_df, users_df)  # Generate reviews based on users and projects
-    generated_reviews_csv = generated_reviews_df.to_csv(index=False)
-
-    st.download_button(
-        label="Download Generated Reviews CSV",
-        data=generated_reviews_csv,
-        file_name="generated_reviews.csv",
-        mime="text/csv"
-    )
-
 else:
-    st.write("Please upload the Users and Projects CSV files to proceed.")
-
-        
+    st.write("Please upload the CSV files to proceed.")
 
 
 # In[ ]:
