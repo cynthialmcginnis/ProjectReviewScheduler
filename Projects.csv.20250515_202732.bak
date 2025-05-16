@@ -1,0 +1,26 @@
+Project_ID,Project_Name,Start_Date,Last_Review_Date,Review_Frequency_Years,Department,Status,Next_Review_Date
+P001,Harness B2B Functionalities,2023-08-04,2024-10-03,2,Finance,Due Soon,2026-10-03
+P002,Redefine Robust Web Services,2024-01-21,2024-03-19,2,Engineering,Due Soon,2026-03-19
+P003,Leverage Next-Generation Methodologies,2024-01-03,2024-09-04,2,Finance,Due Soon,2026-09-04
+P004,Disintermediate Next-Generation Synergies,2024-02-07,2025-04-22,2,QA,Due Soon,2027-04-22
+P005,Visualize Leading-Edge Web-Readiness,2024-04-29,2025-04-01,2,Finance,Due Soon,2027-04-01
+P006,Streamline Back-End Functionalities,2023-06-17,2024-10-22,1,IT,Due Soon,2025-10-22
+P007,Drive Synergistic Relationships,2023-11-22,2025-04-12,1,QA,Due Soon,2026-04-12
+P008,Synthesize Transparent Systems,2024-01-16,2024-11-28,2,IT,Due Soon,2026-11-28
+P009,Repurpose Transparent E-Markets,2023-07-12,2024-09-26,1,QA,Due Soon,2025-09-26
+P010,Exploit Mission-Critical Architectures,2023-06-23,2024-11-12,1,Engineering,Due Soon,2025-11-12
+P011,Architect Efficient Models,2024-04-20,2024-10-02,1,QA,Due Soon,2025-10-02
+P012,Benchmark Plug-And-Play Platforms,2023-11-13,2023-12-31,1,IT,Overdue,2024-12-30
+P013,Re-Intermediate Mission-Critical Relationships,2023-08-11,2024-12-21,2,Engineering,Due Soon,2026-12-21
+P014,Mesh Plug-And-Play Experiences,2023-06-22,2025-03-14,1,HR,Due Soon,2026-03-14
+P015,Re-Contextualize Granular Vortals,2023-11-05,2024-12-15,2,IT,Due Soon,2026-12-15
+P016,Drive Intuitive E-Commerce,2023-12-05,2024-03-17,1,QA,Overdue,2025-03-17
+P017,Innovate Strategic Metrics,2023-05-17,2023-06-25,2,QA,Due Soon,2025-06-24
+P018,Integrate Visionary Applications,2023-10-04,2025-03-05,1,QA,Due Soon,2026-03-05
+P019,Repurpose World-Class E-Markets,2023-09-08,2024-11-09,1,Engineering,Due Soon,2025-11-09
+P020,Re-Contextualize Impactful E-Business,2024-01-14,2025-04-21,1,Engineering,Due Soon,2026-04-21
+P021,Incubate Cutting-Edge Deliverables,2023-10-13,2024-09-04,1,HR,Due Soon,2025-09-04
+P022,Grow Web-Enabled Partnerships,2024-01-28,2024-06-19,1,HR,Due Soon,2025-06-19
+P023,Drive Back-End Info-Mediaries,2023-09-06,2024-09-25,2,QA,Due Soon,2026-09-25
+P024,Drive Best-Of-Breed Mindshare,2024-01-29,2024-06-08,1,QA,Due Soon,2025-06-08
+P025,Optimize World-Class Relationships,2023-08-13,2023-08-23,1,HR,Overdue,2024-08-22

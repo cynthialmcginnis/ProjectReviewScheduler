@@ -1,0 +1,26 @@
+Project_ID,Project_Name,Start_Date,Last_Review_Date,Review_Frequency_Years,Department,Status,Next_Review_Date
+P001,Incubate Enterprise Partnerships,2023-09-06,2025-03-14,1,IT,Due Soon,2026-03-14
+P002,Scale B2C Architectures,2023-07-30,2024-05-23,1,Finance,Due Soon,2025-05-23
+P003,Harness Bricks-And-Clicks Synergies,2023-06-19,2024-11-18,2,QA,Due Soon,2026-11-18
+P004,Engineer Compelling Info-Mediaries,2024-04-05,2024-05-23,2,Finance,Due Soon,2026-05-23
+P005,Drive Magnetic Initiatives,2023-10-09,2024-08-25,2,HR,Due Soon,2026-08-25
+P006,Scale Open-Source Bandwidth,2024-01-15,2024-03-08,1,QA,Overdue,2025-03-08
+P007,Whiteboard Next-Generation Channels,2023-12-26,2025-03-18,2,QA,Due Soon,2027-03-18
+P008,Mesh World-Class Solutions,2024-01-23,2024-08-05,1,IT,Due Soon,2025-08-05
+P009,Incentivize Dot-Com Initiatives,2023-11-10,2024-09-13,1,Engineering,Due Soon,2025-09-13
+P010,Syndicate Clicks-And-Mortar Methodologies,2024-03-31,2025-05-11,2,HR,Due Soon,2027-05-11
+P011,Incubate Real-Time E-Business,2023-08-10,2024-08-14,2,IT,Due Soon,2026-08-14
+P012,Disintermediate Integrated Convergence,2024-05-11,2025-01-19,1,IT,Due Soon,2026-01-19
+P013,Streamline Sticky Supply-Chains,2023-08-08,2024-03-20,2,IT,Due Soon,2026-03-20
+P014,Innovate Scalable Portals,2023-11-10,2024-03-09,2,Engineering,Due Soon,2026-03-09
+P015,Optimize Efficient E-Markets,2023-05-23,2023-06-03,1,Finance,Overdue,2024-06-02
+P016,Deploy Clicks-And-Mortar Vortals,2023-06-06,2025-03-16,1,QA,Due Soon,2026-03-16
+P017,Leverage Dot-Com Architectures,2024-03-30,2024-04-22,2,Finance,Due Soon,2026-04-22
+P018,Empower World-Class Infrastructures,2024-01-13,2024-05-06,2,HR,Due Soon,2026-05-06
+P019,Benchmark E-Business E-Business,2023-09-29,2025-02-15,1,Finance,Due Soon,2026-02-15
+P020,Expedite Global Platforms,2023-10-11,2024-06-17,2,Engineering,Due Soon,2026-06-17
+P021,Deliver Value-Added Niches,2023-12-14,2024-12-30,1,IT,Due Soon,2025-12-30
+P022,Unleash Efficient Initiatives,2023-06-29,2024-02-14,2,IT,Due Soon,2026-02-13
+P023,Cultivate Distributed Eyeballs,2023-10-12,2024-06-29,1,QA,Due Soon,2025-06-29
+P024,Engineer Mission-Critical E-Commerce,2023-08-29,2024-06-06,2,Engineering,Due Soon,2026-06-06
+P025,Brand Back-End E-Commerce,2024-02-10,2024-07-02,2,Engineering,Due Soon,2026-07-02

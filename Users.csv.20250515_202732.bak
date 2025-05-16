@@ -1,0 +1,11 @@
+User_ID,Name,Email,Department,Current_Load
+U001,Catherine Villarreal,russell49@example.net,IT,1
+U002,Kristina Holt,tcastillo@example.org,HR,1
+U003,Angie Ramos,robert05@example.com,Finance,1
+U004,John Ramirez,carol10@example.com,Finance,1
+U005,Kevin Mckinney,fjohnson@example.org,HR,3
+U006,Tammy Moreno,jenniferadams@example.org,QA,0
+U007,Tyrone Ruiz,thorntonshannon@example.org,Finance,3
+U008,Jerry Wagner,johnsondebra@example.org,Finance,2
+U009,Jeremy Mckenzie,connor14@example.org,HR,3
+U010,Nancy Perry,kylebrewer@example.org,Finance,0

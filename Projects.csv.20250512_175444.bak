@@ -1,0 +1,26 @@
+Project_ID,Project_Name,Start_Date,Last_Review_Date,Review_Frequency_Years,Department,Status,Next_Review_Date
+P001,Leverage Cross-Media E-Commerce,2023-10-10,2025-05-05,2,Finance,Due Soon,2027-05-05
+P002,Integrate Front-End Mindshare,2023-07-04,2024-02-13,1,Engineering,Overdue,2025-02-12
+P003,Evolve Cutting-Edge Infrastructures,2024-02-25,2024-07-06,1,Finance,Due Soon,2025-07-06
+P004,Productize Granular Solutions,2023-11-16,2024-12-28,2,Engineering,Due Soon,2026-12-28
+P005,Optimize Integrated Mindshare,2023-12-08,2023-12-21,2,Engineering,Due Soon,2025-12-20
+P006,Enable Bricks-And-Clicks Web Services,2023-07-29,2025-02-15,1,HR,Due Soon,2026-02-15
+P007,Exploit World-Class Web-Readiness,2024-02-20,2024-05-15,1,QA,Due Soon,2025-05-15
+P008,Generate Vertical Initiatives,2024-03-24,2024-08-20,2,QA,Due Soon,2026-08-20
+P009,Mesh Revolutionary Channels,2024-02-13,2024-12-22,1,HR,Due Soon,2025-12-22
+P010,Disintermediate Strategic Interfaces,2023-11-05,2024-05-29,2,QA,Due Soon,2026-05-29
+P011,Benchmark Virtual E-Services,2024-01-08,2024-08-02,2,Finance,Due Soon,2026-08-02
+P012,Optimize Extensible Channels,2024-04-11,2025-05-05,1,IT,Due Soon,2026-05-05
+P013,Revolutionize Rich Schemas,2023-08-13,2023-09-23,1,HR,Overdue,2024-09-22
+P014,Implement Dynamic Convergence,2023-12-16,2024-11-04,2,HR,Due Soon,2026-11-04
+P015,Revolutionize Bricks-And-Clicks Experiences,2024-03-21,2024-06-01,2,QA,Due Soon,2026-06-01
+P016,Cultivate Efficient E-Tailers,2023-09-25,2025-01-16,1,QA,Due Soon,2026-01-16
+P017,Repurpose Value-Added Methodologies,2024-03-29,2025-03-31,1,QA,Due Soon,2026-03-31
+P018,Synthesize Collaborative Schemas,2023-05-25,2025-03-29,1,QA,Due Soon,2026-03-29
+P019,Grow Dynamic Bandwidth,2024-03-12,2024-09-30,1,IT,Due Soon,2025-09-30
+P020,Drive Next-Generation Supply-Chains,2023-05-23,2023-12-17,2,IT,Due Soon,2025-12-16
+P021,Innovate Global Solutions,2024-01-17,2025-02-02,2,HR,Due Soon,2027-02-02
+P022,Transform B2B E-Commerce,2023-10-11,2024-07-14,1,HR,Due Soon,2025-07-14
+P023,Embrace Plug-And-Play Vortals,2023-06-21,2025-02-24,1,HR,Due Soon,2026-02-24
+P024,Re-Intermediate Rich Web-Readiness,2023-05-15,2025-02-06,1,QA,Due Soon,2026-02-06
+P025,Redefine Vertical Bandwidth,2023-06-16,2024-04-05,1,QA,Overdue,2025-04-05

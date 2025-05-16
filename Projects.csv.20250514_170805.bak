@@ -1,0 +1,26 @@
+Project_ID,Project_Name,Start_Date,Last_Review_Date,Review_Frequency_Years,Department,Status,Next_Review_Date
+P001,Synergize Integrated Initiatives,2024-03-31,2024-05-09,2,IT,Due Soon,2026-05-09
+P002,Productize Global Applications,2023-12-31,2025-02-27,1,QA,Due Soon,2026-02-27
+P003,Exploit Visionary Technologies,2023-07-31,2024-07-28,2,QA,Due Soon,2026-07-28
+P004,Generate Enterprise Schemas,2024-01-15,2025-05-04,1,QA,Due Soon,2026-05-04
+P005,Extend Revolutionary Infrastructures,2023-10-30,2024-02-08,2,Finance,Due Soon,2026-02-07
+P006,Iterate Bleeding-Edge E-Services,2023-05-19,2023-12-26,1,Finance,Overdue,2024-12-25
+P007,Harness Virtual Networks,2024-03-20,2024-05-05,1,HR,Overdue,2025-05-05
+P008,Morph Bleeding-Edge Models,2024-03-18,2024-11-05,2,Engineering,Due Soon,2026-11-05
+P009,Deploy World-Class Bandwidth,2024-01-30,2024-10-29,1,HR,Due Soon,2025-10-29
+P010,Embrace One-To-One Convergence,2023-11-14,2024-04-12,2,Engineering,Due Soon,2026-04-12
+P011,Exploit Strategic Action-Items,2024-04-07,2024-08-27,1,HR,Due Soon,2025-08-27
+P012,Orchestrate Real-Time Interfaces,2023-10-24,2024-07-08,1,HR,Due Soon,2025-07-08
+P013,Drive Strategic Methodologies,2023-09-15,2023-12-29,1,IT,Overdue,2024-12-28
+P014,Reinvent Seamless Paradigms,2024-04-10,2024-11-08,1,QA,Due Soon,2025-11-08
+P015,Generate Dynamic Vortals,2023-06-03,2024-03-21,2,QA,Due Soon,2026-03-21
+P016,Mesh Leading-Edge Paradigms,2023-10-15,2024-03-31,2,Engineering,Due Soon,2026-03-31
+P017,Extend Dot-Com E-Commerce,2023-09-10,2024-01-14,1,Engineering,Overdue,2025-01-13
+P018,Integrate Sticky Applications,2024-03-09,2024-06-30,2,IT,Due Soon,2026-06-30
+P019,Drive Best-Of-Breed Relationships,2024-05-04,2024-08-25,2,IT,Due Soon,2026-08-25
+P020,Disintermediate One-To-One E-Business,2024-03-09,2025-02-17,1,IT,Due Soon,2026-02-17
+P021,Incubate Cross-Platform Applications,2023-10-25,2024-03-30,1,IT,Overdue,2025-03-30
+P022,Deploy Collaborative E-Markets,2023-05-16,2023-12-13,1,IT,Overdue,2024-12-12
+P023,Aggregate Dot-Com E-Markets,2023-09-21,2025-02-22,2,Engineering,Due Soon,2027-02-22
+P024,Evolve Impactful Platforms,2023-08-12,2024-05-13,1,QA,Overdue,2025-05-13
+P025,Evolve Visionary Synergies,2024-03-12,2025-05-02,1,Engineering,Due Soon,2026-05-02
