@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[78]:
+
+
+#!/usr/bin/env python
+# coding: utf-8
+
 
 
 """
@@ -40,7 +44,6 @@ from dateutil.relativedelta import relativedelta
    
 
 
-# In[80]:
 
 
 def parse_args(args):
@@ -63,7 +66,6 @@ def parse_args(args):
     return parsed
 
 
-# In[82]:
 
 
 # ===============================================================================
@@ -129,7 +131,7 @@ def backup_file(file_path):
     backup_path = f"{file_path}.{timestamp}.bak"
     with open(file_path, 'r') as src, open(backup_path, 'w') as dst:
         dst.write(src.read())
-    print(f"🗂️  Backed up {file_path} → {backup_path}")
+    print(f" Backed up {file_path} → {backup_path}")
 
 def create_csv_if_missing(file_path, schema=None):
     """
@@ -217,7 +219,6 @@ def update_review(review, file_path='Reviews.csv'):
     write_csv(file_path, reviews)
 
 
-# In[84]:
 
 
 # ===============================================================================
@@ -360,7 +361,6 @@ def validate_referential_integrity():
     }
 
 
-# In[86]:
 
 
 # ===============================================================================
@@ -448,19 +448,18 @@ def calculate_all_reviews(projects_file='Projects.csv', current_date=None):
     return status_counts
 
 
-# In[88]:
 
 
 # ===============================================================================
 # Reviewer Assignment
 # ===============================================================================
-def assign_reviewer(project, reviewers=None):
+def assign_reviewer(project, reviewers=None, users_file='Users.csv', reviews_file='Reviews.csv'):
     """
     Assign a reviewer to a project based on workload balance and department.
     Returns None if no reviewers are available.
     """
     if reviewers is None:
-        reviewers = get_all_users()
+        reviewers = get_all_users(users_file)  # 🔧 FIX: Pass file path
     
     if not reviewers:
         return None  # 🚨 No reviewers at all
@@ -490,9 +489,10 @@ def assign_reviewer(project, reviewers=None):
     
     # Update workload and persist
     assigned_reviewer['Current_Load'] += 1
-    update_user(assigned_reviewer)
+    update_user(assigned_reviewer, users_file)  # 🔧 FIX: Pass file path
     
     # Build review object
+    from datetime import datetime, timedelta
     review = {
         'Review_ID': f"R{datetime.now().strftime('%Y%m%d%H%M%S')}",
         'Project_ID': project['Project_ID'],
@@ -502,50 +502,202 @@ def assign_reviewer(project, reviewers=None):
         'Completion_Date': ''
     }
 
-    add_review(review)
+    add_review(review, reviews_file)  # 🔧 FIX: Pass file path
     return review
+
 
 def assign_all_reviewers(projects_file='Projects.csv', users_file='Users.csv', reviews_file='Reviews.csv'):
     """
     Assign reviewers to all projects needing review (Overdue or Due Soon).
     
+    Args:
+        projects_file (str): Path to the Projects CSV file
+        users_file (str): Path to the Users CSV file  
+        reviews_file (str): Path to the Reviews CSV file
+        
     Returns:
-        dict: Summary of assignment results
+        dict: Summary of assignment results including counts and assignment details
     """
-    # Read data
+    # Read data from specified files
     projects = read_csv(projects_file)
     users = read_csv(users_file)
     existing_reviews = read_csv(reviews_file)
     
-    # Projects needing review
+    # Filter projects that need review (Overdue or Due Soon status)
     projects_needing_review = [p for p in projects 
                                if p.get('Status') in ['Overdue', 'Due Soon']]
     
-    # Exclude projects with active reviews
+    # Exclude projects that already have active reviews to avoid double-assignment
     active_project_ids = {r['Project_ID'] for r in existing_reviews 
-                          if r['Status'] in ['Scheduled', 'In Progress']}
+                          if r.get('Status') in ['Scheduled', 'In Progress']}
     
     projects_to_assign = [p for p in projects_needing_review 
                           if p['Project_ID'] not in active_project_ids]
     
-    # Assign reviewers
+    # Track assignment results
     new_assignments = []
-    for project in projects_to_assign:
-        review = assign_reviewer(project, users)
-        if review:  # ✅ Only if a reviewer was successfully assigned
-            new_assignments.append(review)
+    failed_assignments = []
     
+    # Assign reviewers to each project needing assignment
+    for project in projects_to_assign:
+        try:
+            review = assign_reviewer(project, users, users_file, reviews_file)
+            if review:  # Assignment successful
+                new_assignments.append(review)
+            else:  # Assignment failed (no available reviewers)
+                failed_assignments.append({
+                    'project_id': project['Project_ID'],
+                    'reason': 'No available reviewers'
+                })
+        except Exception as e:
+            # Handle any errors during assignment
+            failed_assignments.append({
+                'project_id': project['Project_ID'],
+                'reason': f'Assignment error: {str(e)}'
+            })
+    
+    # Return comprehensive assignment summary
     return {
         'total_assigned': len(new_assignments),
         'total_needing_review': len(projects_needing_review),
         'already_assigned': len(projects_needing_review) - len(projects_to_assign),
-        'assignments': new_assignments
+        'failed_assignments': len(failed_assignments),
+        'assignments': new_assignments,
+        'failures': failed_assignments
+    }
+
+
+# Helper function to ensure proper file path handling in add_review
+def add_review(review, file_path='Reviews.csv'):
+    """
+    Add a new review to the reviews CSV file.
+    
+    Args:
+        review (dict): Review dictionary to add
+        file_path (str): Path to the reviews CSV file
+    """
+    reviews = read_csv(file_path)
+    reviews.append(review)
+    write_csv(file_path, reviews)
+
+
+# Helper function to ensure proper file path handling in update_user  
+def update_user(user, file_path='Users.csv'):
+    """
+    Update an existing user in the users CSV file.
+    
+    Args:
+        user (dict): User dictionary with updated information
+        file_path (str): Path to the users CSV file
+    """
+    users = read_csv(file_path)
+    for i, u in enumerate(users):
+        if u.get('User_ID') == user.get('User_ID'):
+            users[i] = user
+            break
+    write_csv(file_path, users)
+
+
+# Enhanced version with better error handling and logging
+def assign_reviewer_enhanced(project, reviewers=None, users_file='Users.csv', reviews_file='Reviews.csv', verbose=False):
+    """
+    Enhanced version with detailed logging for debugging.
+    
+    Args:
+        project (dict): Project dictionary
+        reviewers (list, optional): List of reviewers
+        users_file (str): Path to users file
+        reviews_file (str): Path to reviews file
+        verbose (bool): Whether to print debug information
+    
+    Returns:
+        dict: Review assignment result or None
+    """
+    if verbose:
+        print(f"🎯 Assigning reviewer for project {project.get('Project_ID')} ({project.get('Department')})")
+    
+    # Get reviewers if not provided
+    if reviewers is None:
+        reviewers = get_all_users(users_file)
+        if verbose:
+            print(f"   📚 Loaded {len(reviewers)} reviewers from {users_file}")
+    
+    if not reviewers:
+        if verbose:
+            print(f"   ❌ No reviewers available")
+        return None
+    
+    # Process reviewer workloads
+    working_reviewers = []
+    for reviewer in reviewers:
+        reviewer_copy = reviewer.copy()
+        try:
+            reviewer_copy['Current_Load'] = int(reviewer_copy.get('Current_Load', 0))
+        except ValueError:
+            reviewer_copy['Current_Load'] = 0
+        working_reviewers.append(reviewer_copy)
+    
+    if verbose:
+        print(f"   👥 Reviewer workloads:")
+        for r in working_reviewers:
+            print(f"      {r['Name']} ({r['Department']}): {r['Current_Load']} reviews")
+    
+    # Sort by workload
+    reviewers_sorted = sorted(working_reviewers, key=lambda r: r['Current_Load'])
+    
+    # Department-based assignment logic
+    project_dept = project.get('Department', '')
+    other_dept_reviewers = [r for r in reviewers_sorted if r.get('Department') != project_dept]
+    
+    if other_dept_reviewers:
+        assigned_reviewer = other_dept_reviewers[0]
+        assignment_type = "cross-department"
+    else:
+        if not reviewers_sorted:
+            if verbose:
+                print(f"   ❌ No reviewers available after sorting")
+            return None
+        assigned_reviewer = reviewers_sorted[0]
+        assignment_type = "same-department"
+    
+    if verbose:
+        print(f"   ✅ Selected {assigned_reviewer['Name']} ({assigned_reviewer['Department']}) - {assignment_type}")
+        print(f"   📈 Updating workload from {assigned_reviewer['Current_Load']} to {assigned_reviewer['Current_Load'] + 1}")
+    
+    # Update workload
+    assigned_reviewer['Current_Load'] += 1
+    
+    try:
+        update_user(assigned_reviewer, users_file)
+        if verbose:
+            print(f"   💾 Updated user file: {users_file}")
+    except Exception as e:
+        if verbose:
+            print(f"   ❌ Failed to update user: {e}")
+        return None
+    
+    # Create review
+    from datetime import datetime, timedelta
+    review = {
+        'Review_ID': f"R{datetime.now().strftime('%Y%m%d%H%M%S')}",
+        'Project_ID': project['Project_ID'],
+        'Reviewer_ID': assigned_reviewer['User_ID'],
+        'Scheduled_Date': (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d'),
+        'Status': 'Scheduled',
+        'Completion_Date': ''
     }
     
+    try:
+        add_review(review, reviews_file)
+        if verbose:
+            print(f"   💾 Added review to: {reviews_file}")
+            print(f"   🎉 Assignment complete: {review['Review_ID']}")
+    except Exception as e:
+        if verbose:
+            print(f"   ❌ Failed to add review: {e}")
+        return None
     
-
-
-# In[90]:
+    return review
 
 
 # ===============================================================================
@@ -680,7 +832,6 @@ def send_notifications(status_filter=None, smtp_server='localhost', smtp_port=58
     }
 
 
-# In[112]:
 
 
 # ===============================================================================
@@ -904,7 +1055,6 @@ def generate_all_reports():
     }
 
 
-# In[108]:
 
 
 # ===============================================================================
@@ -1115,7 +1265,6 @@ def execute_command(args):
 
 
 
-# In[110]:
 
 
 # ===============================================================================
@@ -1146,13 +1295,17 @@ if __name__ == '__main__':
 
 
 
-# In[ ]:
 
 
 
 
 
-# In[ ]:
+
+
+
+
+
+
 
 
 

@@ -38,11 +38,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from io import StringIO
 
-from faker import Faker
-import random
-fake = Faker()
+#from faker import Faker
+#import random
+#fake = Faker()
 
-from utils import safe_parse_date
+#from utils import safe_parse_date
 from dateutil.relativedelta import relativedelta
 
    
@@ -84,7 +84,7 @@ from datetime import datetime
 
 def read_csv(file_path):
     """
-    Read data from a CSV file. If missing, create a new one with default schema.
+    Read data from a CSV file. If missing, create a new one with the default schema.
 
     Args:
         file_path (str): Full or relative path to the CSV file.
