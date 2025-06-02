@@ -1,77 +1,493 @@
-# create_standalone_app.py
+#!/usr/bin/env python
+# coding: utf-8
+
 """
-Creates a standalone executable that users can run without Python installed
+Universal Project Review Analytics Dashboard
+Can be used by anyone with CSV files or auto-detect files in current directory
 """
 
-import subprocess
-import sys
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.graph_objects as go
+from datetime import datetime, timedelta
+import numpy as np
 import os
+import glob
 
-def create_standalone_app():
-    """Create standalone executable for the dashboard"""
+# Configure Streamlit page
+st.set_page_config(
+    page_title="Project Review Analytics Dashboard",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Custom CSS for better styling
+st.markdown("""
+<style>
+    .dashboard-header {
+        background: linear-gradient(90deg, #1f77b4, #ff7f0e);
+        padding: 1rem;
+        border-radius: 0.5rem;
+        color: white;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .upload-info {
+        background-color: #f0f2f6;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border-left: 4px solid #1f77b4;
+        margin: 1rem 0;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Dashboard Header
+st.markdown("""
+<div class="dashboard-header">
+    <h1>📊 Project Review Analytics Dashboard</h1>
+    <p>Universal dashboard for project review analytics - works with any CSV files!</p>
+</div>
+""", unsafe_allow_html=True)
+
+def auto_detect_csv_files():
+    """Auto-detect CSV files in current directory"""
+    csv_files = glob.glob("*.csv")
+    detected_files = {}
     
-    print("🔧 Creating standalone app...")
+    for file in csv_files:
+        filename_lower = file.lower()
+        if 'user' in filename_lower:
+            detected_files['users'] = file
+        elif 'project' in filename_lower:
+            detected_files['projects'] = file
+        elif 'review' in filename_lower:
+            detected_files['reviews'] = file
     
-    # Install PyInstaller if not present
+    return detected_files
+
+def validate_csv_structure(df, expected_columns, file_type):
+    """Validate that CSV has expected columns"""
+    missing_columns = [col for col in expected_columns if col not in df.columns]
+    if missing_columns:
+        st.error(f"❌ {file_type} file is missing required columns: {missing_columns}")
+        st.info(f"Required columns for {file_type}: {expected_columns}")
+        return False
+    return True
+
+@st.cache_data
+def load_and_validate_data(users_file, projects_file, reviews_file, source_type="upload"):
+    """Load and validate data from various sources"""
     try:
-        import PyInstaller
-    except ImportError:
-        print("Installing PyInstaller...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "pyinstaller"])
-    
-    # Create the executable
-    command = [
-        "pyinstaller",
-        "--onefile",
-        "--windowed",
-        "--name", "ProjectReviewDashboard",
-        "--add-data", "requirements.txt;.",
-        "--hidden-import", "streamlit",
-        "--hidden-import", "plotly",
-        "--hidden-import", "pandas",
-        "dashboard.py"
-    ]
-    
-    subprocess.run(command)
-    
-    print("✅ Standalone app created in 'dist' folder!")
-    print("📦 Users can now run 'ProjectReviewDashboard.exe' directly")
+        # Load data based on source type
+        if source_type == "upload":
+            users_df = pd.read_csv(users_file)
+            projects_df = pd.read_csv(projects_file)
+            reviews_df = pd.read_csv(reviews_file)
+        else:  # file paths
+            users_df = pd.read_csv(users_file)
+            projects_df = pd.read_csv(projects_file)
+            reviews_df = pd.read_csv(reviews_file)
+        
+        # Validate required columns
+        users_required = ['User_ID', 'Name', 'Department']
+        projects_required = ['Project_ID', 'Project_Name', 'Department', 'Status']
+        reviews_required = ['Review_ID', 'Project_ID', 'Reviewer_ID', 'Status']
+        
+        if not validate_csv_structure(users_df, users_required, "Users"):
+            return None, None, None
+        if not validate_csv_structure(projects_df, projects_required, "Projects"):
+            return None, None, None
+        if not validate_csv_structure(reviews_df, reviews_required, "Reviews"):
+            return None, None, None
+        
+        # Data preprocessing with error handling
+        if 'Start_Date' in projects_df.columns:
+            projects_df['Start_Date'] = pd.to_datetime(projects_df['Start_Date'], errors='coerce')
+        if 'Next_Review_Date' in projects_df.columns:
+            projects_df['Next_Review_Date'] = pd.to_datetime(projects_df['Next_Review_Date'], errors='coerce')
+        if 'Scheduled_Date' in reviews_df.columns:
+            reviews_df['Scheduled_Date'] = pd.to_datetime(reviews_df['Scheduled_Date'], errors='coerce')
+        if 'Completion_Date' in reviews_df.columns:
+            reviews_df['Completion_Date'] = pd.to_datetime(reviews_df['Completion_Date'], errors='coerce')
+        
+        # Add missing columns with defaults if needed
+        if 'Current_Load' not in users_df.columns:
+            users_df['Current_Load'] = 0
+        if 'Email' not in users_df.columns:
+            users_df['Email'] = users_df['User_ID'].apply(lambda x: f"{x}@company.com")
+        
+        st.success(f"✅ Data loaded and validated successfully!")
+        st.info(f"📊 Loaded: {len(users_df)} users, {len(projects_df)} projects, {len(reviews_df)} reviews")
+        
+        return users_df, projects_df, reviews_df
+        
+    except Exception as e:
+        st.error(f"❌ Error loading data: {e}")
+        return None, None, None
 
-if __name__ == "__main__":
-    create_standalone_app()
+def calculate_reviewer_performance(users_df, reviews_df):
+    """Calculate comprehensive reviewer performance metrics"""
+    performance_data = []
+    
+    for _, user in users_df.iterrows():
+        user_reviews = reviews_df[reviews_df['Reviewer_ID'] == user['User_ID']]
+        
+        # Calculate metrics
+        total_reviews = len(user_reviews)
+        completed_reviews = len(user_reviews[user_reviews['Status'] == 'Completed'])
+        overdue_reviews = len(user_reviews[user_reviews['Status'] == 'Overdue'])
+        in_progress_reviews = len(user_reviews[user_reviews['Status'] == 'In Progress'])
+        
+        # Calculate completion rate
+        completion_rate = (completed_reviews / total_reviews * 100) if total_reviews > 0 else 0
+        
+        # Calculate average review time for completed reviews
+        if 'Completion_Date' in reviews_df.columns and 'Scheduled_Date' in reviews_df.columns:
+            completed_with_dates = user_reviews[
+                (user_reviews['Status'] == 'Completed') & 
+                (user_reviews['Completion_Date'].notna()) & 
+                (user_reviews['Scheduled_Date'].notna())
+            ]
+            
+            if len(completed_with_dates) > 0:
+                avg_review_time = (completed_with_dates['Completion_Date'] - 
+                                 completed_with_dates['Scheduled_Date']).dt.days.mean()
+            else:
+                avg_review_time = 0
+        else:
+            avg_review_time = 0
+        
+        performance_data.append({
+            'Reviewer_ID': user['User_ID'],
+            'Reviewer_Name': user['Name'],
+            'Department': user.get('Department', 'Unknown'),
+            'Total_Reviews': total_reviews,
+            'Completed_Reviews': completed_reviews,
+            'Overdue_Reviews': overdue_reviews,
+            'In_Progress_Reviews': in_progress_reviews,
+            'Completion_Rate': completion_rate,
+            'Avg_Review_Days': avg_review_time,
+            'Current_Load': int(user.get('Current_Load', 0))
+        })
+    
+    return pd.DataFrame(performance_data)
 
-# Alternative: Auto-opening browser version
-def create_auto_browser_version():
-    """Creates version that automatically opens browser"""
+def calculate_project_metrics(projects_df):
+    """Calculate project completion and status metrics"""
+    total_projects = len(projects_df)
     
-    # Create launcher script
-    launcher_code = '''
-import webbrowser
-import subprocess
-import time
-import threading
+    # Handle different possible status values
+    status_counts = projects_df['Status'].value_counts()
+    overdue_projects = status_counts.get('Overdue', 0)
+    due_soon_projects = status_counts.get('Due Soon', 0)
+    up_to_date_projects = status_counts.get('Up to Date', 0) + status_counts.get('Current', 0)
+    
+    return {
+        'total_projects': total_projects,
+        'overdue_projects': overdue_projects,
+        'due_soon_projects': due_soon_projects,
+        'up_to_date_projects': up_to_date_projects,
+        'status_counts': status_counts
+    }
 
-def run_dashboard():
-    subprocess.run(["streamlit", "run", "dashboard.py", "--server.headless", "true"])
+def create_workload_chart(performance_df):
+    """Create workload distribution chart"""
+    if performance_df.empty:
+        return None
+        
+    fig = px.bar(
+        performance_df,
+        x='Reviewer_Name',
+        y='Current_Load',
+        color='Department',
+        title='Current Workload Distribution by Reviewer',
+        labels={'Current_Load': 'Active Reviews', 'Reviewer_Name': 'Reviewer'},
+        text='Current_Load'
+    )
+    
+    fig.update_traces(texttemplate='%{text}', textposition='outside')
+    fig.update_layout(
+        xaxis_tickangle=-45,
+        height=500,
+        showlegend=True
+    )
+    
+    return fig
 
-def open_browser():
-    time.sleep(3)  # Wait for server to start
-    webbrowser.open("http://localhost:8501")
+def create_status_pie_chart(project_metrics):
+    """Create project status pie chart"""
+    status_counts = project_metrics['status_counts']
+    if status_counts.empty:
+        return None
+        
+    fig = go.Figure(data=[go.Pie(
+        labels=status_counts.index,
+        values=status_counts.values,
+        textinfo='label+percent+value',
+        hole=0.4
+    )])
+    
+    fig.update_layout(
+        title='Project Status Distribution',
+        height=400
+    )
+    
+    return fig
 
-if __name__ == "__main__":
-    # Start dashboard in background
-    dashboard_thread = threading.Thread(target=run_dashboard)
-    dashboard_thread.daemon = True
-    dashboard_thread.start()
+# Sidebar for data input methods
+st.sidebar.header("📁 Data Input Methods")
+
+# Auto-detect files in current directory
+detected_files = auto_detect_csv_files()
+
+input_method = st.sidebar.radio(
+    "Choose how to load your data:",
+    ["Upload CSV Files", "Auto-detect Files", "Manual File Paths"]
+)
+
+users_df, projects_df, reviews_df = None, None, None
+
+if input_method == "Upload CSV Files":
+    st.sidebar.subheader("📤 Upload Your CSV Files")
     
-    # Open browser
-    open_browser()
+    st.markdown("""
+    <div class="upload-info">
+        <h4>📋 Required File Format</h4>
+        <p><strong>Users.csv:</strong> User_ID, Name, Department (Current_Load optional)</p>
+        <p><strong>Projects.csv:</strong> Project_ID, Project_Name, Department, Status</p>
+        <p><strong>Reviews.csv:</strong> Review_ID, Project_ID, Reviewer_ID, Status</p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # Keep running
-    input("Press Enter to exit...")
-'''
+    users_file = st.sidebar.file_uploader("Upload Users CSV", type=["csv"], key="users_upload")
+    projects_file = st.sidebar.file_uploader("Upload Projects CSV", type=["csv"], key="projects_upload")
+    reviews_file = st.sidebar.file_uploader("Upload Reviews CSV", type=["csv"], key="reviews_upload")
     
-    with open("run_dashboard.py", "w") as f:
-        f.write(launcher_code)
+    if users_file and projects_file and reviews_file:
+        users_df, projects_df, reviews_df = load_and_validate_data(
+            users_file, projects_file, reviews_file, "upload"
+        )
+
+elif input_method == "Auto-detect Files":
+    st.sidebar.subheader("🔍 Auto-detected Files")
     
-    print("✅ Created 'run_dashboard.py' - double-click to start!")
+    if detected_files:
+        st.sidebar.success("✅ Found CSV files:")
+        for file_type, filename in detected_files.items():
+            st.sidebar.write(f"• {file_type.title()}: {filename}")
+        
+        if len(detected_files) == 3:
+            try:
+                users_df, projects_df, reviews_df = load_and_validate_data(
+                    detected_files['users'], 
+                    detected_files['projects'], 
+                    detected_files['reviews'], 
+                    "files"
+                )
+            except KeyError as e:
+                st.sidebar.error(f"Missing required file type: {e}")
+        else:
+            st.sidebar.warning("⚠️ Need exactly 3 CSV files (users, projects, reviews)")
+    else:
+        st.sidebar.warning("⚠️ No CSV files found in current directory")
+        st.sidebar.info("Make sure your CSV files contain 'user', 'project', or 'review' in their names")
+
+elif input_method == "Manual File Paths":
+    st.sidebar.subheader("📂 Manual File Paths")
+    
+    users_path = st.sidebar.text_input("Users CSV Path:", value="Users.csv")
+    projects_path = st.sidebar.text_input("Projects CSV Path:", value="Projects.csv")
+    reviews_path = st.sidebar.text_input("Reviews CSV Path:", value="Reviews.csv")
+    
+    if st.sidebar.button("Load Files"):
+        if os.path.exists(users_path) and os.path.exists(projects_path) and os.path.exists(reviews_path):
+            users_df, projects_df, reviews_df = load_and_validate_data(
+                users_path, projects_path, reviews_path, "files"
+            )
+        else:
+            st.sidebar.error("❌ One or more files not found")
+
+# Main dashboard logic
+if users_df is not None and projects_df is not None and reviews_df is not None:
+    
+    # Calculate metrics
+    performance_df = calculate_reviewer_performance(users_df, reviews_df)
+    project_metrics = calculate_project_metrics(projects_df)
+    
+    # Sidebar filters
+    st.sidebar.header("🔍 Filters")
+    departments = ['All'] + list(users_df['Department'].unique())
+    selected_dept = st.sidebar.selectbox("Filter by Department", departments)
+    
+    # Apply department filter
+    if selected_dept != 'All':
+        performance_df = performance_df[performance_df['Department'] == selected_dept]
+        projects_df_filtered = projects_df[projects_df['Department'] == selected_dept]
+        project_metrics = calculate_project_metrics(projects_df_filtered)
+    
+    # Key Performance Indicators (KPIs)
+    st.header("🎯 Key Performance Indicators")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric(
+            label="Total Projects",
+            value=project_metrics['total_projects'],
+            delta=f"{project_metrics['up_to_date_projects']} up to date"
+        )
+    
+    with col2:
+        if not performance_df.empty:
+            avg_completion_rate = performance_df['Completion_Rate'].mean()
+            high_performers = len(performance_df[performance_df['Completion_Rate'] > 80])
+        else:
+            avg_completion_rate = 0
+            high_performers = 0
+            
+        st.metric(
+            label="Avg Completion Rate",
+            value=f"{avg_completion_rate:.1f}%",
+            delta=f"{high_performers} high performers"
+        )
+    
+    with col3:
+        overdue_pct = (project_metrics['overdue_projects']/project_metrics['total_projects']*100) if project_metrics['total_projects'] > 0 else 0
+        st.metric(
+            label="Overdue Projects",
+            value=project_metrics['overdue_projects'],
+            delta=f"{overdue_pct:.1f}% of total",
+            delta_color="inverse"
+        )
+    
+    with col4:
+        total_active_reviews = performance_df['Current_Load'].sum() if not performance_df.empty else 0
+        in_progress = performance_df['In_Progress_Reviews'].sum() if not performance_df.empty else 0
+        st.metric(
+            label="Active Reviews",
+            value=total_active_reviews,
+            delta=f"{in_progress} in progress"
+        )
+    
+    # Main dashboard content
+    st.header("📈 Analytics Dashboard")
+    
+    # Charts
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        workload_chart = create_workload_chart(performance_df)
+        if workload_chart:
+            st.plotly_chart(workload_chart, use_container_width=True)
+        else:
+            st.info("No reviewer data available for workload chart")
+    
+    with col2:
+        status_pie = create_status_pie_chart(project_metrics)
+        if status_pie:
+            st.plotly_chart(status_pie, use_container_width=True)
+        else:
+            st.info("No project status data available")
+    
+    # Detailed Tables
+    st.header("📊 Detailed Analytics")
+    
+    tab1, tab2, tab3 = st.tabs(["Reviewer Performance", "Project Details", "Data Summary"])
+    
+    with tab1:
+        st.subheader("Reviewer Performance Metrics")
+        if not performance_df.empty:
+            st.dataframe(
+                performance_df.sort_values('Completion_Rate', ascending=False),
+                use_container_width=True
+            )
+            
+            # Download button
+            csv_performance = performance_df.to_csv(index=False)
+            st.download_button(
+                label="📥 Download Performance Report",
+                data=csv_performance,
+                file_name=f"reviewer_performance_{datetime.now().strftime('%Y%m%d')}.csv",
+                mime="text/csv"
+            )
+        else:
+            st.info("No performance data available")
+    
+    with tab2:
+        st.subheader("Project Status Overview")
+        display_columns = ['Project_ID', 'Project_Name', 'Department', 'Status']
+        if 'Next_Review_Date' in projects_df.columns:
+            display_columns.append('Next_Review_Date')
+            
+        st.dataframe(
+            projects_df[display_columns],
+            use_container_width=True
+        )
+    
+    with tab3:
+        st.subheader("Data Summary")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.write("**Users Data Columns:**")
+            st.write(list(users_df.columns))
+        
+        with col2:
+            st.write("**Projects Data Columns:**")
+            st.write(list(projects_df.columns))
+        
+        with col3:
+            st.write("**Reviews Data Columns:**")
+            st.write(list(reviews_df.columns))
+
+else:
+    # Instructions for users
+    st.info("👆 Please select a data input method from the sidebar to get started!")
+    
+    # Sample data format guide
+    st.header("📋 Sample Data Format")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.subheader("Users.csv")
+        st.code("""User_ID,Name,Email,Department,Current_Load
+U001,John Doe,john@email.com,IT,3
+U002,Jane Smith,jane@email.com,HR,2
+U003,Bob Wilson,bob@email.com,Finance,1""")
+    
+    with col2:
+        st.subheader("Projects.csv")
+        st.code("""Project_ID,Project_Name,Department,Status,Next_Review_Date
+P001,System Upgrade,IT,Due Soon,2025-06-15
+P002,Policy Review,HR,Up to Date,2025-07-01
+P003,Budget Analysis,Finance,Overdue,2025-05-30""")
+    
+    with col3:
+        st.subheader("Reviews.csv")
+        st.code("""Review_ID,Project_ID,Reviewer_ID,Status,Scheduled_Date
+R001,P001,U001,In Progress,2025-06-10
+R002,P002,U002,Completed,2025-05-15
+R003,P003,U003,Overdue,2025-05-25""")
+    
+    st.header("🚀 Getting Started")
+    st.markdown("""
+    **Option 1 - Upload Files:** Use the sidebar to upload your CSV files directly
+    
+    **Option 2 - Auto-detect:** Place your CSV files in the same directory as this dashboard and ensure filenames contain 'user', 'project', or 'review'
+    
+    **Option 3 - File Paths:** Enter the full paths to your CSV files in the sidebar
+    """)
+
+# Footer
+st.markdown("---")
+st.markdown(
+    "<div style='text-align: center; color: #666;'>"
+    "Universal Project Review Analytics Dashboard | Works with any CSV files!"
+    "</div>", 
+    unsafe_allow_html=True
+)
