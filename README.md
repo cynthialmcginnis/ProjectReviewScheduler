@@ -1155,6 +1155,23 @@ python run_all_tests.py
 - dateutil
 - faker (for test data generation)
 
+  ## 🌐 Live Dashboard
+Access the interactive dashboard here: [Coming Soon - Streamlit Cloud Link]
+
+## 📊 Dashboard Features
+- Upload your own CSV files
+- Real-time analytics
+- Interactive charts
+- Performance metrics
+- Executive reporting
+
+## 🚀 Quick Start
+1. Visit the dashboard link above
+2. Upload your Users.csv, Projects.csv, and Reviews.csv files  
+3. View instant analytics and insights!
+
+No software installation required - works in any web browser.
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
