@@ -1,6 +1,7 @@
 # Core dependencies
 pandas>=1.3.0
 streamlit>=1.10.0
+plotly>=5.15.0
 
 # Data handling
 numpy>=1.20.0
@@ -14,3 +15,7 @@ pytest>=7.0.0
 
 # If you use visualization in your Streamlit app
 matplotlib>=3.5.0
+
+
+# For testing (if applicable)
+pytest>=7.0.0
