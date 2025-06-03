@@ -24,6 +24,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Initialize session state
+if 'regenerate_reviews' not in st.session_state:
+    st.session_state.regenerate_reviews = False
+
 # Custom CSS for better styling
 st.markdown("""
 <style>
@@ -78,31 +82,133 @@ def validate_csv_structure(df, expected_columns, file_type):
         return False
     return True
 
+def generate_realistic_reviews(users_df, projects_df):
+    """Generate realistic review data based on users and projects"""
+    import random
+    from datetime import datetime, timedelta
+    
+    reviews = []
+    
+    # Create multiple reviews per project for realism
+    for _, project in projects_df.iterrows():
+        # Determine number of reviews based on project status
+        if project['Status'] == 'Overdue':
+            num_reviews = random.randint(1, 3)  # Overdue projects might have multiple reviews
+        elif project['Status'] == 'Due Soon':
+            num_reviews = random.randint(1, 2)
+        else:
+            num_reviews = 1
+        
+        for review_num in range(num_reviews):
+            # Smart reviewer assignment
+            # Try to assign reviewers from different departments for cross-departmental review
+            other_dept_reviewers = users_df[users_df['Department'] != project['Department']]
+            
+            if not other_dept_reviewers.empty and random.random() > 0.3:  # 70% chance of cross-dept assignment
+                reviewer = other_dept_reviewers.sample(1).iloc[0]
+            else:
+                reviewer = users_df.sample(1).iloc[0]
+            
+            # Generate realistic dates and statuses
+            base_date = datetime.now() - timedelta(days=random.randint(1, 90))
+            
+            # Status distribution based on project status
+            if project['Status'] == 'Overdue':
+                status_options = ['Overdue', 'In Progress', 'Scheduled']
+                weights = [0.5, 0.3, 0.2]
+            elif project['Status'] == 'Due Soon':
+                status_options = ['In Progress', 'Scheduled', 'Completed']
+                weights = [0.4, 0.4, 0.2]
+            else:  # Up to Date
+                status_options = ['Completed', 'In Progress', 'Scheduled']
+                weights = [0.6, 0.2, 0.2]
+            
+            status = random.choices(status_options, weights=weights)[0]
+            
+            # Generate dates based on status
+            if status == 'Completed':
+                scheduled_date = base_date
+                completion_date = scheduled_date + timedelta(days=random.randint(1, 14))
+            elif status == 'Overdue':
+                scheduled_date = base_date - timedelta(days=random.randint(1, 30))
+                completion_date = None
+            else:  # In Progress or Scheduled
+                scheduled_date = base_date + timedelta(days=random.randint(-5, 15))
+                completion_date = None
+            
+            review_id = f"R{len(reviews) + 1:03d}"
+            
+            reviews.append({
+                'Review_ID': review_id,
+                'Project_ID': project['Project_ID'],
+                'Reviewer_ID': reviewer['User_ID'],
+                'Status': status,
+                'Scheduled_Date': scheduled_date.strftime('%Y-%m-%d'),
+                'Completion_Date': completion_date.strftime('%Y-%m-%d') if completion_date else ''
+            })
+    
+    # Update user workloads based on active reviews
+    active_reviews = [r for r in reviews if r['Status'] in ['Scheduled', 'In Progress']]
+    reviewer_counts = {}
+    for review in active_reviews:
+        reviewer_id = review['Reviewer_ID']
+        reviewer_counts[reviewer_id] = reviewer_counts.get(reviewer_id, 0) + 1
+    
+    # Update Current_Load in users_df
+    for i, user in users_df.iterrows():
+        users_df.at[i, 'Current_Load'] = reviewer_counts.get(user['User_ID'], 0)
+    
+    return pd.DataFrame(reviews)
+
 @st.cache_data
-def load_and_validate_data(users_file, projects_file, reviews_file, source_type="upload"):
-    """Load and validate data from various sources"""
+def load_and_validate_data(users_file, projects_file, reviews_file=None, source_type="upload"):
+    """Load and validate data from various sources, auto-generate reviews if needed"""
     try:
-        # Load data based on source type
+        # Load users and projects data
         if source_type == "upload":
             users_df = pd.read_csv(users_file)
             projects_df = pd.read_csv(projects_file)
-            reviews_df = pd.read_csv(reviews_file)
+            if reviews_file is not None:
+                reviews_df = pd.read_csv(reviews_file)
+            else:
+                reviews_df = None
         else:  # file paths
             users_df = pd.read_csv(users_file)
             projects_df = pd.read_csv(projects_file)
-            reviews_df = pd.read_csv(reviews_file)
+            if reviews_file and os.path.exists(reviews_file):
+                reviews_df = pd.read_csv(reviews_file)
+            else:
+                reviews_df = None
         
-        # Validate required columns
+        # Validate required columns for users and projects
         users_required = ['User_ID', 'Name', 'Department']
         projects_required = ['Project_ID', 'Project_Name', 'Department', 'Status']
-        reviews_required = ['Review_ID', 'Project_ID', 'Reviewer_ID', 'Status']
         
         if not validate_csv_structure(users_df, users_required, "Users"):
             return None, None, None
         if not validate_csv_structure(projects_df, projects_required, "Projects"):
             return None, None, None
-        if not validate_csv_structure(reviews_df, reviews_required, "Reviews"):
-            return None, None, None
+        
+        # Auto-generate reviews if not provided
+        if reviews_df is None or reviews_df.empty:
+            st.info("🔄 No reviews data provided. Auto-generating realistic review data...")
+            with st.expander("ℹ️ What's included in auto-generated reviews?"):
+                st.markdown("""
+                **Smart Review Generation:**
+                - 🎯 Cross-departmental reviewer assignments for better oversight
+                - 📅 Realistic date distributions based on project status
+                - 📊 Balanced review status distribution (Completed, In Progress, Overdue, Scheduled)
+                - ⚖️ Automatic workload balancing across reviewers
+                - 🔄 Multiple reviews per project when appropriate (especially for overdue projects)
+                """)
+            reviews_df = generate_realistic_reviews(users_df, projects_df)
+            st.success("✅ Auto-generated realistic review assignments!")
+        else:
+            # Validate reviews if provided
+            reviews_required = ['Review_ID', 'Project_ID', 'Reviewer_ID', 'Status']
+            if not validate_csv_structure(reviews_df, reviews_required, "Reviews"):
+                st.warning("⚠️ Reviews file has issues. Auto-generating instead...")
+                reviews_df = generate_realistic_reviews(users_df, projects_df)
         
         # Data preprocessing with error handling
         if 'Start_Date' in projects_df.columns:
@@ -259,15 +365,15 @@ if input_method == "Upload CSV Files":
         <h4>📋 Required File Format</h4>
         <p><strong>Users.csv:</strong> User_ID, Name, Department (Current_Load optional)</p>
         <p><strong>Projects.csv:</strong> Project_ID, Project_Name, Department, Status</p>
-        <p><strong>Reviews.csv:</strong> Review_ID, Project_ID, Reviewer_ID, Status</p>
+        <p><strong>Reviews.csv:</strong> <em>Optional!</em> Will auto-generate if not provided</p>
     </div>
     """, unsafe_allow_html=True)
     
     users_file = st.sidebar.file_uploader("Upload Users CSV", type=["csv"], key="users_upload")
     projects_file = st.sidebar.file_uploader("Upload Projects CSV", type=["csv"], key="projects_upload")
-    reviews_file = st.sidebar.file_uploader("Upload Reviews CSV", type=["csv"], key="reviews_upload")
+    reviews_file = st.sidebar.file_uploader("Upload Reviews CSV (Optional)", type=["csv"], key="reviews_upload")
     
-    if users_file and projects_file and reviews_file:
+    if users_file and projects_file:
         users_df, projects_df, reviews_df = load_and_validate_data(
             users_file, projects_file, reviews_file, "upload"
         )
@@ -280,39 +386,53 @@ elif input_method == "Auto-detect Files":
         for file_type, filename in detected_files.items():
             st.sidebar.write(f"• {file_type.title()}: {filename}")
         
-        if len(detected_files) == 3:
+        if len(detected_files) >= 2:  # Only need users and projects
             try:
+                reviews_file = detected_files.get('reviews', None)
                 users_df, projects_df, reviews_df = load_and_validate_data(
                     detected_files['users'], 
                     detected_files['projects'], 
-                    detected_files['reviews'], 
+                    reviews_file, 
                     "files"
                 )
             except KeyError as e:
                 st.sidebar.error(f"Missing required file type: {e}")
         else:
-            st.sidebar.warning("⚠️ Need exactly 3 CSV files (users, projects, reviews)")
+            st.sidebar.warning("⚠️ Need at least Users and Projects CSV files")
     else:
         st.sidebar.warning("⚠️ No CSV files found in current directory")
-        st.sidebar.info("Make sure your CSV files contain 'user', 'project', or 'review' in their names")
+        st.sidebar.info("Make sure your CSV files contain 'user' and 'project' in their names")
 
 elif input_method == "Manual File Paths":
     st.sidebar.subheader("📂 Manual File Paths")
     
     users_path = st.sidebar.text_input("Users CSV Path:", value="Users.csv")
     projects_path = st.sidebar.text_input("Projects CSV Path:", value="Projects.csv")
-    reviews_path = st.sidebar.text_input("Reviews CSV Path:", value="Reviews.csv")
+    reviews_path = st.sidebar.text_input("Reviews CSV Path (Optional):", value="Reviews.csv")
     
     if st.sidebar.button("Load Files"):
-        if os.path.exists(users_path) and os.path.exists(projects_path) and os.path.exists(reviews_path):
+        if os.path.exists(users_path) and os.path.exists(projects_path):
+            reviews_file = reviews_path if os.path.exists(reviews_path) else None
             users_df, projects_df, reviews_df = load_and_validate_data(
-                users_path, projects_path, reviews_path, "files"
+                users_path, projects_path, reviews_file, "files"
             )
         else:
-            st.sidebar.error("❌ One or more files not found")
+            st.sidebar.error("❌ Users.csv and Projects.csv are required")
 
 # Main dashboard logic
 if users_df is not None and projects_df is not None and reviews_df is not None:
+    
+    # Add option to regenerate reviews
+    with st.sidebar.expander("🔄 Review Generation Options"):
+        if st.button("🎲 Regenerate Reviews", help="Create new random review assignments"):
+            st.session_state.regenerate_reviews = True
+    
+    # Regenerate reviews if requested
+    if st.session_state.get('regenerate_reviews', False):
+        with st.spinner("Regenerating reviews..."):
+            reviews_df = generate_realistic_reviews(users_df, projects_df)
+        st.success("✅ Reviews regenerated with new assignments!")
+        st.session_state.regenerate_reviews = False
     
     # Calculate metrics
     performance_df = calculate_reviewer_performance(users_df, reviews_df)
@@ -454,40 +574,47 @@ else:
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.subheader("Users.csv")
+        st.subheader("Users.csv (Required)")
         st.code("""User_ID,Name,Email,Department,Current_Load
 U001,John Doe,john@email.com,IT,3
 U002,Jane Smith,jane@email.com,HR,2
 U003,Bob Wilson,bob@email.com,Finance,1""")
     
     with col2:
-        st.subheader("Projects.csv")
+        st.subheader("Projects.csv (Required)")
         st.code("""Project_ID,Project_Name,Department,Status,Next_Review_Date
 P001,System Upgrade,IT,Due Soon,2025-06-15
 P002,Policy Review,HR,Up to Date,2025-07-01
 P003,Budget Analysis,Finance,Overdue,2025-05-30""")
     
     with col3:
-        st.subheader("Reviews.csv")
+        st.subheader("Reviews.csv (Optional)")
         st.code("""Review_ID,Project_ID,Reviewer_ID,Status,Scheduled_Date
 R001,P001,U001,In Progress,2025-06-10
 R002,P002,U002,Completed,2025-05-15
 R003,P003,U003,Overdue,2025-05-25""")
+        st.info("💡 If not provided, reviews will be auto-generated!")
     
     st.header("🚀 Getting Started")
     st.markdown("""
-    **Option 1 - Upload Files:** Use the sidebar to upload your CSV files directly
+    **Option 1 - Upload Files:** Use the sidebar to upload your CSV files directly (only Users and Projects required!)
     
-    **Option 2 - Auto-detect:** Place your CSV files in the same directory as this dashboard and ensure filenames contain 'user', 'project', or 'review'
+    **Option 2 - Auto-detect:** Place your CSV files in the same directory as this dashboard and ensure filenames contain 'user' and 'project'
     
     **Option 3 - File Paths:** Enter the full paths to your CSV files in the sidebar
+    
+    **✨ Smart Features:**
+    - Reviews are **automatically generated** if not provided
+    - Missing columns are added with sensible defaults
+    - Cross-departmental reviewer assignments for better oversight
+    - Realistic review status distributions based on project status
     """)
 
 # Footer
 st.markdown("---")
 st.markdown(
     "<div style='text-align: center; color: #666;'>"
-    "Universal Project Review Analytics Dashboard | Works with any CSV files!"
+    "Universal Project Review Analytics Dashboard | Auto-generates missing data for instant insights!"
     "</div>", 
     unsafe_allow_html=True
 )
