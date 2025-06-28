@@ -1156,7 +1156,7 @@ python run_all_tests.py
 - faker (for test data generation)
 
   ## 🌐 Live Dashboard
-Access the interactive dashboard here: [Coming Soon - Streamlit Cloud Link]
+Access the interactive dashboard here: https://prcdashboard.streamlit.app/
 
 ## 📊 Dashboard Features
 - Upload your own CSV files
